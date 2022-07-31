@@ -85,15 +85,70 @@ void tokenCommands(char *inputString, char *outputArray[MAX], char separator) //
     return;
 }
 
+int runOneLine(char *paths[MAX], char *line)
+{
+    int counter;
+    char *programAndArgs[MAX];
+    char *oneProgram[MAX];
+    char *programPath;
+    counter = 0;
+    if (strcmp(line, "exit\n") == 0) // Exits the loop and program if input is exit
+    {
+        return 1; // return used to stop the program
+    }
+    if (strcmp(line, "\n") != 0) // checks for empty newline input
+    {                            // If input isnt empty, separates the programs and arguments by "&"
+        tokenCommands(line, programAndArgs, *"&");
+    }
+    counter = 0;
+    while (programAndArgs[counter] != NULL)
+    {
+        tokenCommands(programAndArgs[counter], oneProgram, *" ");
+        if (!strcmp(oneProgram[0], "cd"))
+        {
+            if ((chdir(oneProgram[1]) != 0) && (oneProgram[2] == NULL))
+            {
+                printf("Error chdir");
+                exit(1);
+            }
+        }
+        else if (!strcmp(oneProgram[0], "path"))
+        {
+            counter = 1;
+            while (oneProgram[counter] != NULL)
+            {
+                paths[counter - 1] = strdup(oneProgram[counter]);
+                counter++;
+            }
+            paths[counter] = NULL;
+        }
+        else
+        {
+            if ((programPath = checkAccess(paths, oneProgram[0])) == NULL)
+            {
+                perror("Couldnt get access to program.");
+            }
+            else
+            {
+                if (runProgram(oneProgram) != 0)
+                {
+                    perror("Problem running the program.");
+                    exit(1);
+                }
+            }
+        }
+        counter++;
+    }
+    while (wait(NULL) > 0) // waits for all the child processes to finish before
+        ;                  // Giving control back to user.
+    return 0;
+}
+
 int interactiveShell()
 {
     // Help for using getline(): https://c-for-dummies.com/blog/?p=1112
     char *buffer;
-    int counter = 0;
-    char *programAndArgs[MAX];
-    char *oneProgram[MAX];
     char *paths[MAX];
-    char *programPath;
     size_t bufferSize = 32;
     buffer = (char *)malloc(bufferSize * sizeof(char));
 
@@ -102,65 +157,39 @@ int interactiveShell()
     paths[2] = NULL;
     while (1) //
     {
-        if (strcmp(buffer, "exit\n") == 0) // Exits the loop and program if input is exit
-        {
-            break;
-        }
-        counter = 0;
         printf("wish>");
         getline(&buffer, &bufferSize, stdin);
-        if (strcmp(buffer, "\n") != 0) // checks for empty newline input
-        {                              // If input isnt empty, separates the programs and arguments by "&"
-            tokenCommands(buffer, programAndArgs, *"&");
-        }
-        counter = 0;
-        while (programAndArgs[counter] != NULL)
-        {
-            tokenCommands(programAndArgs[counter], oneProgram, *" ");
-            if (!strcmp(oneProgram[0], "cd"))
-            {
-                if ((chdir(oneProgram[1]) != 0) && (oneProgram[2] == NULL))
-                {
-                    printf("Error chdir");
-                    exit(1);
-                }
-            }
-            else if (!strcmp(oneProgram[0], "path"))
-            {
-                counter = 1;
-                while (oneProgram[counter] != NULL)
-                {
-                    paths[counter - 1] = strdup(oneProgram[counter]);
-                    counter++;
-                }
-                paths[counter] = NULL;
-            }
-            else
-            {
-                if ((programPath = checkAccess(paths, oneProgram[0])) == NULL)
-                {
-                    perror("Couldnt get access to program.");
-                }
-                else
-                {
-                    if (runProgram(oneProgram) != 0)
-                    {
-                        perror("Problem running the program.");
-                        exit(1);
-                    }
-                }
-            }
-            counter++;
-        }
-        while (wait(NULL) > 0) // waits for all the child processes to finish before
-            ;                  // Giving control back to user.
+        runOneLine(paths, buffer);
     }
     return 0;
 }
 
-int batchShell()
+int batchShell(char *fileName)
 {
-    printf("BATRCH");
+    char *paths[MAX];
+    paths[0] = strdup("/bin"); // Setting the default paths for programs
+    paths[1] = strdup("/usr/bin");
+    paths[2] = NULL;
+    size_t bufferSize = 32;
+    FILE *file = NULL;
+    char *line = NULL;
+
+    line = (char *)malloc(sizeof(char) * bufferSize);
+
+    if ((file = fopen(fileName, "r")) == NULL)
+    {
+        perror("Couldnt open file");
+        exit(1);
+    }
+    while (fgets(line, MAX, file) != NULL)
+    {
+        if (runOneLine(paths, line) == 1)
+        {
+            perror("Error");
+            exit(1);
+        }
+    }
+    fclose(file);
     return 0;
 }
 
@@ -172,8 +201,12 @@ int main(int argc, char **argv)
     }
     else
     {
-        batchShell();
+        for (int i = 1; i < argc; i++)
+        {
+            batchShell(argv[i]);
+        }
     }
+    printf("Wish exiting successfully.\n");
 
     return 0;
 }
