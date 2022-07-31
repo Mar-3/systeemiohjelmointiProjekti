@@ -91,6 +91,7 @@ int runOneLine(char *paths[MAX], char *line)
     char *programAndArgs[MAX];
     char *oneProgram[MAX];
     char *programPath;
+
     counter = 0;
     if (strcmp(line, "exit\n") == 0) // Exits the loop and program if input is exit
     {
@@ -130,6 +131,21 @@ int runOneLine(char *paths[MAX], char *line)
             }
             else
             {
+                for (int i = 0; oneProgram[i] != NULL; i++) // Used: https://stackoverflow.com/questions/584868/rerouting-stdin-and-stdout-from-c
+                {                                           // checking for file output sign ">" and redirecting stdin to output file if possible
+                    if (strcmp(oneProgram[i], ">") == 0)
+                    {
+
+                        if ((freopen(oneProgram[i + 1], "w", stdout)) == NULL)
+                        {
+                            perror("Cannot open output file");
+                            exit(1);
+                        }
+                        free(oneProgram[i + 1]);
+                        free(oneProgram[i]);
+                        oneProgram[i] = NULL;
+                    }
+                }
                 if (runProgram(oneProgram) != 0)
                 {
                     perror("Problem running the program.");
@@ -141,6 +157,9 @@ int runOneLine(char *paths[MAX], char *line)
     }
     while (wait(NULL) > 0) // waits for all the child processes to finish before
         ;                  // Giving control back to user.
+
+    // Setting the stdout back in case it was redirected to a file
+    freopen("/dev/tty", "w", stdout); // https://stackoverflow.com/questions/29154056/redirect-stdout-to-a-file
     return 0;
 }
 
@@ -151,15 +170,16 @@ int interactiveShell()
     char *paths[MAX];
     size_t bufferSize = 32;
     buffer = (char *)malloc(bufferSize * sizeof(char));
+    int stop = 0;
 
     paths[0] = strdup("/bin"); // Setting the default paths for programs
     paths[1] = strdup("/usr/bin");
     paths[2] = NULL;
-    while (1) //
+    while (stop == 0) //
     {
         printf("wish>");
         getline(&buffer, &bufferSize, stdin);
-        runOneLine(paths, buffer);
+        stop = runOneLine(paths, buffer); // RunOneLine returns 1 when exit is typed, ending the loop.
     }
     return 0;
 }
@@ -206,7 +226,7 @@ int main(int argc, char **argv)
             batchShell(argv[i]);
         }
     }
-    printf("Wish exiting successfully.\n");
+    printf("Shell exiting successfully.\n");
 
     return 0;
 }
