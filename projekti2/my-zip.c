@@ -1,8 +1,10 @@
+// my-zip.c - Käyttöjärjestelmä ja systeemiohjelmointi projekti 2
+// Marko Jutila 31.7.2022
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#define MAXBUFFER 100
+#define MAXBUFFER 1024
 
 void readFile(char *fileName)
 {

@@ -1,5 +1,5 @@
 // reverse.c - Käyttöjärjestelmä ja systeemiohjelmointi projekti 1
-// Marko Jutila 20.7.2022
+// Marko Jutila 31.7.2022
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -7,7 +7,7 @@
 
 #define MAX 1024
 
-struct LINE
+struct LINE // a linked list to store all the lines and pointer to next struct
 {
     char text[MAX];
     struct LINE *pNext;
@@ -16,9 +16,9 @@ struct LINE
 struct LINE *readFile(char inputFile[MAX])
 {
     FILE *file = NULL;
-    struct LINE *pNewest = NULL;
-    struct LINE *ptr = NULL;
-    char cLine[MAX];
+    struct LINE *pNewest = NULL; // pointer to newest struct in linked list
+    struct LINE *ptr = NULL;     // temporary pointer
+    char cLine[MAX];             // Stores the text from one line
 
     if ((file = fopen(inputFile, "r")) != NULL)
     {
@@ -46,7 +46,7 @@ struct LINE *readFile(char inputFile[MAX])
     return pNewest;
 }
 
-void writeFile(char *outputFile, struct LINE *pNewest)
+void writeFile(char *outputFile, struct LINE *pNewest) // Writes lines to a file
 {
     FILE *file = NULL;
     if ((file = fopen(outputFile, "w")) != NULL)
@@ -59,14 +59,14 @@ void writeFile(char *outputFile, struct LINE *pNewest)
     }
     else
     {
-        fprintf(stderr, "Problem opening the file.");
+        fprintf(stderr, "Problem opening the file.\n");
         exit(1);
     }
     fclose(file);
     return;
 }
 
-struct LINE *userInput()
+struct LINE *userInput() // User input mode if no filenames are given.
 {
     struct LINE *pNewest = NULL;
     struct LINE *ptr = NULL;
@@ -75,7 +75,7 @@ struct LINE *userInput()
 
     while (strcmp(line, "exit\n"))
     {
-        fgets(line, MAX, stdin);
+        fgets(line, MAX, stdin); // Loop reads lines from user input until "exit" is given
         if (line != NULL)
         {
             if ((ptr = (struct LINE *)malloc(sizeof(struct LINE))) != NULL)
@@ -86,15 +86,16 @@ struct LINE *userInput()
             }
             else
             {
-                fprintf(stderr, "malloc failed.");
+                fprintf(stderr, "malloc failed.\n");
                 exit(1);
             }
         }
     }
-    return pNewest;
+    free(ptr);
+    return pNewest; // returns the most recent struct in linked list
 }
 
-void freeMemory(struct LINE *pNewest)
+void freeMemory(struct LINE *pNewest) // frees all used memory
 {
     struct LINE *ptr = NULL;
     while (pNewest != NULL)
@@ -130,24 +131,26 @@ int main(int argc, char **argv)
     char outputFile[MAX];
     if (argc == 1)
     {
-        // user input reverse
+        // user input
         pNewest = userInput();
         printf("\nUser inputted lines in reverse order:\n");
         printLines(pNewest);
     }
     else if (argc == 2)
     {
+        // Read from file and print to stdout
         strcpy(inputFile, argv[1]);
         pNewest = readFile(inputFile);
         printLines(pNewest);
     }
     if (argc == 3)
     {
+        // Read from file and write to a file
         strcpy(inputFile, argv[1]);
         strcpy(outputFile, argv[2]);
         if (!strcmp(inputFile, outputFile))
         {
-            fprintf(stderr, "Input and output file must differ");
+            fprintf(stderr, "Input and output file must differ\n");
             exit(1);
         }
         pNewest = readFile(inputFile);

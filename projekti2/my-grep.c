@@ -1,3 +1,5 @@
+// my-grep.c - Käyttöjärjestelmä ja systeemiohjelmointi projekti 2
+// Marko Jutila 31.7.2022
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -35,7 +37,7 @@ void readStdin(char *keyword)
     strcpy(printedLines, "\n");
     printf("Please type the lines you want to use grep command on. (Empty line to stop and print.):\n");
     strcpy(line, "placeholder");
-    while (!(line[1] == '\0'))
+    while (line[0] != '\n')
     {
         fgets(line, MAX, stdin);
         if (strstr(line, keyword))

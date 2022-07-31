@@ -1,3 +1,5 @@
+// my-cat.c - Käyttöjärjestelmä ja systeemiohjelmointi projekti 2
+// Marko Jutila 31.7.2022
 #include <stdio.h>
 #include <stdlib.h>
 
